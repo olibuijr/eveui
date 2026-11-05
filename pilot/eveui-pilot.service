@@ -1,0 +1,12 @@
+[Unit]
+Description=EveUI pilot: AI quest routes for the EveUI WoW addon (Claude Agent SDK)
+After=network-online.target
+
+[Service]
+WorkingDirectory=%h/Projects/wow-eveui/pilot
+ExecStart=%h/.local/bin/uv run --frozen -q python pilot.py
+Restart=on-failure
+RestartSec=5
+Environment=PATH=%h/.local/bin:/usr/local/bin:/usr/bin:/bin
+
+[Install]

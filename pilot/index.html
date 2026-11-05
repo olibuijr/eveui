@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EveUI Pilot</title>
+<style>
+  :root {
+    --bg: #05080a; --panel: #0a0f13; --line: #26333a; --text: #dbe3e8; --dim: #808c93;
+    --accent: #5bc7db; --hostile: #eb4538; --ok: #59e673;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.45 "Barlow Semi Condensed", "Arial Narrow", system-ui, sans-serif; }
+  main { max-width: 760px; margin: 0 auto; padding: 16px; }
+  header { display: flex; align-items: baseline; gap: 12px; border-bottom: 1px solid var(--line); padding-bottom: 8px; }
+  header h1 { font-size: 15px; letter-spacing: .12em; margin: 0; color: var(--accent); }
+  header span { color: var(--dim); font-size: 13px; }
+  section { background: var(--panel); border: 1px solid var(--line); margin-top: 14px; padding: 12px 14px; }
+  h2 { font-size: 12px; letter-spacing: .12em; color: var(--dim); margin: 0 0 8px; font-weight: 600; }
+  ol { margin: 0; padding-left: 26px; }
+  li { padding: 3px 0; }
+  li .k { color: var(--accent); font-size: 12px; letter-spacing: .08em; margin-right: 6px; }
+  li .n { color: var(--dim); font-size: 13px; display: block; }
+  li.cur { color: #fff; }
+  li.done { color: var(--dim); text-decoration: line-through; }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; }
+  input, button { font: inherit; color: var(--text); background: #0f161b; border: 1px solid var(--line); padding: 8px 10px; }
+  input { flex: 1 1 260px; min-width: 0; }
+  button { cursor: pointer; color: var(--accent); }
+  button:hover, input:focus { border-color: var(--accent); outline: none; }
+  button:disabled { color: var(--dim); cursor: wait; }
+  #answer { white-space: pre-wrap; margin-top: 10px; }
+  .err { color: var(--hostile); }
+  .muted { color: var(--dim); }
+</style>
+</head>
+<body>
+<main>
+  <header><h1>EVEUI PILOT</h1><span id="status">connecting…</span></header>
+
+  <section>
+    <h2>ASK</h2>
+    <form id="askf" class="row">
+      <input id="q" placeholder="Where do Webwood Spiders spawn?" autocomplete="off">
+      <button id="askb">Ask</button>
+    </form>
+    <div id="answer" class="muted"></div>
+  </section>
+
+  <section>
+    <h2>ROUTE</h2>
+    <p id="summary" class="muted">No plan yet.</p>
+    <ol id="steps"></ol>
+    <form id="planf" class="row" style="margin-top:10px">
+      <input id="goal" placeholder="Optional goal: e.g. finish Teldrassil and head to Darkshore" autocomplete="off">
+      <button id="planb">Replan</button>
+    </form>
+    <p class="muted" style="font-size:13px;margin:8px 0 0">A new route reaches the game on your next /reload.</p>
+  </section>
+</main>
+<script>
+const $ = (id) => document.getElementById(id);
+
+function esc(s) { return String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])); }
+
+async function refresh() {
+  try {
+    const [h, g] = await Promise.all([fetch("health").then((r) => r.json()), fetch("guide").then((r) => r.json())]);
+    const bits = [];
+    if (h.planning) bits.push("planning…");
+    if (h.state_time) bits.push("game state " + h.state_time.slice(11));
+    if (h.guide) bits.push("route " + h.guide.created + (h.last_plan_seconds ? " (" + h.last_plan_seconds + " s)" : ""));
+    $("status").innerHTML = esc(bits.join(" · ") || "waiting for a /reload") + (h.last_error ? ' <span class="err">' + esc(h.last_error) + "</span>" : "");
+    $("summary").textContent = g.summary || "No plan yet.";
+    $("steps").innerHTML = (g.steps || []).map((s) =>
+      `<li><span class="k">${esc(s.kind.toUpperCase())}</span>${esc(s.text)}` +
+      (s.note ? `<span class="n">${esc(s.note)}</span>` : "") + "</li>").join("");
+  } catch (e) {
+    $("status").innerHTML = '<span class="err">service unreachable</span>';
+  }
+}
+
+$("askf").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const q = $("q").value.trim();
+  if (!q) return;
+  $("askb").disabled = true;
+  $("answer").className = "muted";
+  $("answer").textContent = "Thinking…";
+  try {
+    const r = await fetch("ask", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ question: q }) });
+    const j = await r.json();
+    $("answer").className = j.error ? "err" : "";
+    $("answer").textContent = j.error || j.answer;
+  } catch (err) {
+    $("answer").className = "err";
+    $("answer").textContent = String(err);
+  }
+  $("askb").disabled = false;
+});
+
+$("planf").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  $("planb").disabled = true;
+  const goal = $("goal").value.trim();
+  try {
+    const r = await fetch("plan", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(goal ? { goal } : {}) });
+    const j = await r.json();
+    if (j.error) $("status").innerHTML = '<span class="err">' + esc(j.error) + "</span>";
+  } finally {
+    $("planb").disabled = false;
+    refresh();
+  }
+});
+
+refresh();
+setInterval(refresh, 5000);
+</script>
+</body>
+</html>

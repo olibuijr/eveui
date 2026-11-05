@@ -1,0 +1,11 @@
+[project]
+name = "eveui-pilot"
+version = "0.1.0"
+requires-python = ">=3.13"
+dependencies = [
+    "aiohttp>=3.14.5",
+    "claude-agent-sdk>=0.2.178",
+]
+[tool.pyright]
+venvPath = "."
+venv = ".venv"
