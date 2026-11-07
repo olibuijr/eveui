@@ -67,6 +67,11 @@ ns.RegisterModule(function()
     r.pw:SetStatusBarTexture(ns.WHITE)
     r.pw:SetMinMaxValues(0, 100)
     ns.Bar3D(r.pw)
+    -- Debuffs to the right of the row, outside the panel.
+    if ns.CreateAuraIcons then
+      r.debuffs = ns.CreateAuraIcons(r, 5, 20)
+      for k, ic in ipairs(r.debuffs) do ic:SetPoint("LEFT", r, "RIGHT", 10 + (k - 1) * 23, 0) end
+    end
     rows[i] = r
   end
 
@@ -77,7 +82,7 @@ ns.RegisterModule(function()
       if UnitExists(u) then
         n = n + 1
         local cc = ns.ClassColor(u)
-        r.name:SetText(UnitName(u))
+        ns.SetUnitName(r.name, u)
         r.name:SetTextColor(unpack(cc))
         ns.SetBarColor(r.hp, C.health)
         pcall(r.hp.SetValue, r.hp, ns.HealthPct100(u))
@@ -92,6 +97,7 @@ ns.RegisterModule(function()
           ns.SetHealthText(r.pct, u)
         end
         r.sel:SetShown(ns.Plain(UnitIsUnit(u, "target")) == true)
+        if r.debuffs then ns.FillAuraIcons(r.debuffs, u, "HARMFUL", C.hostile) end
         local inRange = UnitInRange(u)
         if r.body.SetAlphaFromBoolean and ns.issecret(inRange) then
           r.body:SetAlphaFromBoolean(inRange, 1, 0.45)

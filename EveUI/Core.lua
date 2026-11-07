@@ -99,6 +99,40 @@ function ns.PowerPct(unit)
   return m > 0 and UnitPower(unit) / m or 0
 end
 
+-- Names ------------------------------------------------------------------------
+-- WoW Forever characters have a first and a last name: UnitName returns them
+-- as two values (the second used to be the realm). Shown as "First Last" like
+-- Blizzard's own frames; your own surname follows the game's setting. Names
+-- can be secret for units outside your group, so they go through
+-- SetFormattedText, which can display secrets, instead of being joined here.
+local function ShowSurname(unit)
+  if unit ~= "player" and ns.Plain(UnitIsUnit(unit, "player")) ~= true then return true end
+  if RegionalUniqueNamesEnabled and RegionalUniqueNamesEnabled() and C_PlayerInfo
+    and C_PlayerInfo.ShouldDisplaySurname then
+    return C_PlayerInfo.ShouldDisplaySurname() ~= false
+  end
+  return true
+end
+
+function ns.SetUnitName(fs, unit)
+  local first, last = UnitName(unit)
+  if ns.issecret(last) then
+    if ShowSurname(unit) and pcall(fs.SetFormattedText, fs, "%s %s", first, last) then return end
+  elseif last and last ~= "" and ShowSurname(unit) then
+    if pcall(fs.SetFormattedText, fs, "%s %s", first, last) then return end
+  end
+  fs:SetText(first)
+end
+
+-- Plain "First Last" (nil when secret), for code that needs a string.
+function ns.UnitFullName(unit)
+  local first, last = UnitName(unit)
+  first, last = ns.Plain(first), ns.Plain(last)
+  if not first then return nil end
+  if last and last ~= "" and ShowSurname(unit) then return first .. " " .. last end
+  return first
+end
+
 -- 0-100 percent for StatusBars, secret or plain (same call as the % text).
 function ns.HealthPct100(unit)
   if UnitHealthPercent and CurveConstants and CurveConstants.ScaleTo100 then

@@ -13,11 +13,12 @@ local timerFont = CreateFont("EveUIAuraTimer")
 timerFont:SetFont(ns.FONT, 10, "OUTLINE")
 timerFont:SetTextColor(1, 1, 1)
 
-local function CreateIcons(parent, count)
+local function CreateIcons(parent, count, size)
+  size = size or ICON
   local icons = {}
   for i = 1, count do
     local b = CreateFrame("Frame", nil, parent)
-    b:SetSize(ICON, ICON)
+    b:SetSize(size, size)
     ns.Box(b, { 0, 0, 0, 0.7 })
     b.tex = b:CreateTexture(nil, "ARTWORK")
     b.tex:SetPoint("TOPLEFT", 1, -1)
@@ -29,7 +30,8 @@ local function CreateIcons(parent, count)
     b.cd:SetReverse(true)
     b.cd:SetHideCountdownNumbers(false)
     if b.cd.SetCountdownFont then b.cd:SetCountdownFont("EveUIAuraTimer") end
-    b.count = ns.Text(b, 11, C.title, "RIGHT", "OUTLINE")
+    b.cd:SetHideCountdownNumbers(size < 18)
+    b.count = ns.Text(b, size < 20 and 9 or 11, C.title, "RIGHT", "OUTLINE")
     b.count:SetPoint("BOTTOMRIGHT", 1, 1)
     b:EnableMouse(true)
     b:SetScript("OnEnter", function(self)
@@ -44,6 +46,13 @@ local function CreateIcons(parent, count)
   end
   return icons
 end
+ns.CreateAuraIcons = CreateIcons
+
+-- Debuff border by type, like the default frames (dispellable at a glance).
+local DISPEL = {
+  Magic = { 0.25, 0.60, 1.00, 1 }, Curse = { 0.65, 0.20, 1.00, 1 },
+  Disease = { 0.75, 0.50, 0.15, 1 }, Poison = { 0.20, 0.75, 0.25, 1 },
+}
 
 -- In combat the game may lock aura data for other units; then try just your
 -- own auras ("|PLAYER"), and hide the row if those are locked too.
@@ -61,7 +70,8 @@ local function FillIcons(icons, unit, filter, border)
     if a then
       b.unit, b.index, b.filter = unit, i, filter
       b.tex:SetTexture(a.icon)
-      ns.SetBoxBorder(b, border)
+      local dt = filter:find("HARMFUL", 1, true) and ns.Plain(a.dispelName)
+      ns.SetBoxBorder(b, (dt and DISPEL[dt]) or border)
       local id = a.auraInstanceID
       local dur = id and C_UnitAuras.GetAuraDuration and ns.Call(C_UnitAuras.GetAuraDuration, unit, id)
       if dur and b.cd.SetCooldownFromDurationObject then
@@ -84,6 +94,7 @@ local function FillIcons(icons, unit, filter, border)
     end
   end
 end
+ns.FillAuraIcons = FillIcons
 
 -- Lock frame -------------------------------------------------------------------
 
@@ -204,7 +215,7 @@ local function CreateLock(o)
 
     local color = ns.Plain(UnitIsPlayer(o.unit)) and ns.ClassColor(o.unit) or ns.ReactionColor(o.unit)
     label:SetTextColor(unpack(ns.ReactionColor(o.unit)))
-    name:SetText(UnitName(o.unit))
+    ns.SetUnitName(name, o.unit)
     name:SetTextColor(unpack(color))
 
     if ns.Plain(UnitIsDeadOrGhost(o.unit)) then
@@ -490,7 +501,7 @@ local function CreateUnitFrame(o)
   local big = o.h >= 50
   local name = ns.Text(b, big and 14 or 12, C.title, "LEFT")
   name:SetPoint("TOPLEFT", left, -pad)
-  name:SetPoint("RIGHT", b, "RIGHT", right - 70, 0)
+  name:SetPoint("RIGHT", b, "RIGHT", right - 48, 0)
   local info = ns.Text(b, big and 11 or 10, C.dim, "RIGHT")
   info:SetPoint("TOPRIGHT", right, -pad - 1)
 
@@ -523,15 +534,26 @@ local function CreateUnitFrame(o)
       point = { o.castPoint or "BOTTOM", f, o.castRel or "TOP", 0, 4 } })
   end
 
+  -- Auras: o.auras = { size, above }. A row of debuffs next to the frame
+  -- (or its cast bar) and a row of buffs beyond it.
   local debuffs, buffs
   if o.auras then
-    debuffs = CreateIcons(b, PER_ROW)
-    buffs = CreateIcons(b, PER_ROW)
-    for i = 1, PER_ROW do
-      -- Above the frame and its cast bar: debuffs first, buffs on top.
-      local y0 = 4 + (o.cast and 22 or 0)
-      debuffs[i]:SetPoint("BOTTOMLEFT", f, "TOPLEFT", (i - 1) * (ICON + GAP), y0)
-      buffs[i]:SetPoint("BOTTOMLEFT", f, "TOPLEFT", (i - 1) * (ICON + GAP), y0 + ICON + GAP)
+    local size = o.auras.size or ICON
+    local per = math.max(math.floor((o.w + GAP) / (size + GAP)), 1)
+    debuffs = CreateIcons(b, per, size)
+    buffs = CreateIcons(b, per, size)
+    local right = o.portrait == "right"
+    local point = right and "RIGHT" or "LEFT"
+    for i = 1, per do
+      local x = (right and -1 or 1) * (i - 1) * (size + GAP)
+      if o.auras.above then
+        local y0 = 4 + (o.cast and 22 or 0)
+        debuffs[i]:SetPoint("BOTTOM" .. point, f, "TOP" .. point, x, y0)
+        buffs[i]:SetPoint("BOTTOM" .. point, f, "TOP" .. point, x, y0 + size + GAP)
+      else
+        debuffs[i]:SetPoint("TOP" .. point, f, "BOTTOM" .. point, x, -4)
+        buffs[i]:SetPoint("TOP" .. point, f, "BOTTOM" .. point, x, -4 - size - GAP)
+      end
     end
   end
 
@@ -547,7 +569,7 @@ local function CreateUnitFrame(o)
     local u = o.unit
     if not UnitExists(u) then return end
     local isPlayer = ns.Plain(UnitIsPlayer(u))
-    name:SetText(UnitName(u))
+    ns.SetUnitName(name, u)
     name:SetTextColor(unpack(isPlayer and ns.ClassColor(u) or ns.ReactionColor(u)))
 
     local lvl = ns.Plain(UnitLevel(u))
@@ -609,21 +631,23 @@ ns.MOVER_LABELS.ucast = "Cast bar"
 ns.RegisterModule(function()
   if not ns.Classic() then return end
   local _, pcast = CreateUnitFrame({ name = "EveUIPlayerFrame", key = "uplayer", unit = "player", w = 260, h = 62,
-    portrait = "left", power = true, numbers = true, pos = { "BOTTOM", "BOTTOM", -170, 250 } })
+    portrait = "left", power = true, numbers = true, auras = { size = 24, above = true },
+    pos = { "BOTTOM", "BOTTOM", -170, 250 } })
   local player = ns.CreateCastBar({ name = "EveUIPlayerCast", key = "ucast", unit = "player", w = 240, h = 22,
     -- In the gap between the two action bar racks, where the ring HUD was.
     pos = { "BOTTOM", "BOTTOM", 0, 150 } })
   ns.playerCast = player
   local _, tcast = CreateUnitFrame({ name = "EveUITargetFrame", key = "utarget", unit = "target", w = 260, h = 62,
-    portrait = "right", power = true, numbers = true, cast = 260, auras = true,
+    portrait = "right", power = true, numbers = true, cast = 260, auras = { size = 24, above = true },
     pos = { "BOTTOM", "BOTTOM", 170, 250 }, events = { "PLAYER_TARGET_CHANGED" } })
   ns.targetCast = tcast
   CreateUnitFrame({ name = "EveUIFocusFrame", key = "ufocus", unit = "focus", w = 200, h = 46,
-    portrait = "left", power = true, numbers = false, cast = 200,
+    portrait = "left", power = true, numbers = false, cast = 200, auras = { size = 20, above = true },
     pos = { "BOTTOM", "BOTTOM", -420, 340 }, events = { "PLAYER_FOCUS_CHANGED" } })
   CreateUnitFrame({ name = "EveUITargetTargetFrame", key = "utot", unit = "targettarget", w = 150, h = 34,
-    power = false, numbers = false, tick = true, pos = { "BOTTOM", "BOTTOM", 385, 250 },
+    power = false, numbers = false, tick = true, auras = { size = 16 }, pos = { "BOTTOM", "BOTTOM", 385, 250 },
     events = { "PLAYER_TARGET_CHANGED" } })
   CreateUnitFrame({ name = "EveUIPetFrame", key = "upet", unit = "pet", w = 150, h = 38,
-    power = true, numbers = false, pos = { "BOTTOM", "BOTTOM", -385, 250 }, events = { "UNIT_PET" } })
+    power = true, numbers = false, auras = { size = 16 }, pos = { "BOTTOM", "BOTTOM", -385, 250 },
+    events = { "UNIT_PET" } })
 end, "unitframes")

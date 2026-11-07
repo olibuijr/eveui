@@ -147,7 +147,7 @@ ns.RegisterModule(function()
         local dead = ns.Plain(UnitIsDead(u))
         r.icon:SetVertexColor(c[1], c[2], c[3], dead and 0.4 or 1)
         r.icon:SetRotation(ns.Plain(UnitIsPlayer(u)) and math.pi / 4 or 0)
-        r.name:SetText(UnitName(u))
+        ns.SetUnitName(r.name, u)
         if dead then r.name:SetTextColor(unpack(C.dim)) else r.name:SetTextColor(c[1], c[2], c[3]) end
         local _, label = ns.Range(u)
         r.dist:SetText(label)
