@@ -31,6 +31,28 @@ the cast fills a segmented ring like an EVE module cycle.
 - Works on its own using the game's quest positions (nearest objective or turn-in). With the optional
   [pilot service](#ai-route-planning-optional) it follows an AI-planned route instead.
 
+**Ship systems** (0.4)
+
+- **Brackets**: nameplates become EVE brackets: shape by unit type, reaction colour, distance, a thin
+  health line, lock-on corners on your target, a red ring when a unit is on you, fleet tags.
+- **D-Scan and radar**: a round radar with range rings (group members exact, other units by distance
+  and screen bearing) and a directional scanner with angle, range and an animated sweep.
+- **Star map**: zones of the continent as star systems with jump lines, security colours from zone
+  levels, you-are-here and the autopilot route. Pan, zoom, hover for quests, click to open the map.
+- **Fitting**: gear on high, mid and low slot rings around your ship, stats as gauges.
+- **Skill queue**: level as the skill in training (XP/h, time to level), professions as queued skills.
+- **Wallet**: gold history graph (24h, 7d, all), session income and expenses by source, ISK display.
+- **Killmails**: an EVE killmail after each kill or death, with involved parties and spells.
+- **Missions**: quest dialogs as agent conversations with briefings, and a mission journal.
+- **Fleet broadcasts**: target, need heals, need mana, in position, hold, align to, enemy spotted,
+  travel and clear, sent between EveUI users in your group.
+- **Voice alerts**: a ship-computer voice and banners for shields low, hull critical, capacitor,
+  target destroyed, warp, docking, level up, mission complete and more (original Piper TTS clips).
+- **Fleet comms and combat coach**: the pilot service reads the combat log live, shows graphs and
+  breakdowns on the second screen and has Claude debrief each fight; the tips show in game after
+  `/reload`.
+- **Faction themes**: Caldari, Amarr, Gallente, Minmatar and Jove accents (Settings or `/eve theme`).
+
 **The rest of the interface**
 
 - **Module racks**: round action buttons in two racks either side of the screen centre, with
@@ -78,6 +100,14 @@ ln -s /path/to/eveui/EveUI "World of Warcraft/_forever_/Interface/AddOns/EveUI"
 | `/eve neocom`, `/eve blizz` | Toggle the Neocom, or hiding Blizzard's unit frames |
 | `/eve check` | One-line health report: errors, blocked actions, gauge and cast traces |
 | `/eve art` | List Blizzard art still visible, for theming work |
+| `/eve meter`, `/eve km` | Toggle the damage meter, open killmails |
+| `/eve starmap`, `/eve dscan` | Star map, D-Scan window |
+| `/eve fitting`, `/eve skills`, `/eve wallet` | Ship screens |
+| `/eve missions [agent\|replace]` | Mission journal; agent panel options |
+| `/eve bc [kind]` | Fleet broadcast (target, shield, cap, position, hold, align, enemy, jump, clear) |
+| `/eve voice [all\|on\|off\|mute\|<line>]` | Voice alert test and options |
+| `/eve brackets`, `/eve comms` | Toggle brackets; fleet comms panel |
+| `/eve theme <name>` | caldari, amarr, gallente, minmatar, jove (reloads) |
 
 ## AI route planning (optional)
 
@@ -109,6 +139,11 @@ EVEUI_WOW="/path/to/World of Warcraft/_forever_" uv run python pilot.py
 | `EVEUI_ADDON` | `../EveUI` (where `Guide.lua` is written) |
 | `EVEUI_PILOT_HOST`, `EVEUI_PILOT_PORT` | `0.0.0.0`, `7450` |
 | `EVEUI_PILOT_MODEL` | Claude Code's default model |
+| `EVEUI_COMBATLOG` | newest `Logs/WoWCombatLog*.txt` (file or folder) |
+| `EVEUI_DEBRIEF_MIN`, `EVEUI_COMBAT_GAP` | 20 s fight minimum for a debrief, 5 s gap ends a fight |
+| `EVEUI_BRIEFINGS` | `1`; `0` turns mission briefings off |
+
+For the combat coach, type `/combatlog` in game once per session; the service follows the log file.
 
 A systemd user unit is in [`pilot/eveui-pilot.service`](pilot/eveui-pilot.service). The service has no
 password: run it on your home network only.

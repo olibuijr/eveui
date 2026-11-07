@@ -68,7 +68,7 @@ function ns.RegisterModule(fn, key) ns.modules[#ns.modules + 1] = { fn = fn, key
 function ns.ModuleOn(key) return not (EveUIDB and EveUIDB.off and EveUIDB.off[key]) end
 function ns.OnLayout(fn) ns.layoutHooks[#ns.layoutHooks + 1] = fn end
 
-function ns.Print(msg) print("|cff5bc7dbEveUI|r " .. msg) end
+function ns.Print(msg) print("|cff" .. (ns.accentHex or "5bc7db") .. "EveUI|r " .. msg) end
 
 -- Secret values ----------------------------------------------------------------
 -- WoW Forever hides combat numbers from addon code ("secret values"). Widgets
@@ -566,7 +566,7 @@ local function MoverOverlay(f)
   m:SetFrameStrata("DIALOG")
   m:SetFrameLevel(50)
   local px = ns.Px(m)
-  ns.Box(m, { 0.36, 0.78, 0.86, 0.10 }, C.accent, px)
+  ns.Box(m, { C.accent[1], C.accent[2], C.accent[3], 0.10 }, C.accent, px)
   -- Label tab in the top-left corner.
   local tag = CreateFrame("Frame", nil, m)
   tag:SetPoint("TOPLEFT", px, -px)
@@ -806,6 +806,7 @@ ev:SetScript("OnEvent", function(_, event, arg)
       if EveUIDB[k] == nil then EveUIDB[k] = type(v) == "table" and {} or v end
     end
     EveUIDB.errors = {}
+    if ns.ApplyTheme then ns.Safe("theme", ns.ApplyTheme)() end
   elseif event == "PLAYER_LOGIN" then
     ns.UpdateScale()
     ns.Safe("fonts", RestyleFonts)()
@@ -890,11 +891,40 @@ SlashCmdList.EVEUI = function(msg)
     else
       ns.Print("frame style: " .. (EveUIDB.frameStyle == "eve" and "eve" or "classic") .. "  (/eve style eve | classic)")
     end
+  elseif cmd == "meter" and ns.meter then
+    ns.meter:SetShown(not ns.meter:IsShown())
+  elseif (cmd == "km" or cmd == "killmails") and ns.ToggleKillmails then
+    ns.ToggleKillmails()
+  elseif cmd == "fitting" and ns.ToggleFitting then
+    ns.ToggleFitting()
+  elseif cmd == "skills" and ns.ToggleSkillQueue then
+    ns.ToggleSkillQueue()
+  elseif cmd == "wallet" and ns.ToggleWallet then
+    ns.ToggleWallet()
+  elseif cmd == "starmap" and ns.ToggleStarMap then
+    ns.ToggleStarMap()
+  elseif cmd == "dscan" and ns.ToggleDScan then
+    ns.ToggleDScan()
+  elseif cmd == "missions" and ns.ToggleMissions then
+    ns.ToggleMissions(arg)
+  elseif cmd == "bc" and ns.BroadcastCommand then
+    ns.BroadcastCommand(arg)
+  elseif cmd == "voice" and ns.VoiceTest then
+    ns.VoiceTest(arg)
+  elseif cmd == "brackets" and ns.BracketsRefresh then
+    EveUIDB.brackets = EveUIDB.brackets or {}
+    EveUIDB.brackets.enabled = EveUIDB.brackets.enabled == false
+    ns.BracketsRefresh()
+    ns.Print("brackets " .. (EveUIDB.brackets.enabled and "on" or "off"))
+  elseif cmd == "comms" and ns.ToggleComms then
+    ns.ToggleComms()
+  elseif cmd == "theme" and ns.ThemeCommand then
+    ns.ThemeCommand(arg)
   elseif cmd == "pilot" and ns.pilot then
     ns.pilot.Command(arg)
   elseif cmd == "debug" and ns.DebugDump then
     ns.DebugDump()
   else
-    ns.Print("/eveui opens the settings window. Commands: unlock | lock | reset | scale <0.5-2> | blizz | neocom | test | cast [channel|locked|interrupt] | check | pilot | style")
+    ns.Print("/eveui opens the settings window. Commands: unlock | lock | reset | scale <0.5-2> | blizz | neocom | test | cast [channel|locked|interrupt] | check | pilot | style | theme | meter | km | fitting | skills | wallet | starmap | dscan | missions | bc | voice | brackets | comms")
   end
 end

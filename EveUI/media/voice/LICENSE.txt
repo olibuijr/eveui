@@ -1,0 +1,16 @@
+EveUI ship-computer voice lines (*.ogg in this folder)
+
+These clips are original recordings made for EveUI. They contain no audio from
+EVE Online or World of Warcraft.
+
+How they were made:
+- Text-to-speech with Piper (https://github.com/rhasspy/piper, MIT licence),
+  voice model en_GB "cori" (high) from https://huggingface.co/rhasspy/piper-voices
+  (repository licence: MIT). The voice was trained on public-domain LibriVox
+  recordings (model card: "License: public domain").
+- Post-processed with FFmpeg: silence trim, high-pass 180 Hz, low-pass 9.5 kHz,
+  slight presence boost, light chorus, short echo, EBU R128 loudness
+  normalisation (-16 LUFS), Ogg Vorbis, mono, 44.1 kHz.
+
+The resulting clips are released under the same terms as EveUI itself and may
+be redistributed with it.

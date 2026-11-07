@@ -157,3 +157,27 @@ New file `DamageMeter.lua` needs one full client restart; after that `/reload` i
 |---|---|---|
 | Damage meter | new, unverified | EVE panel over `C_DamageMeter` (default above the Overview, movable and resizable with `/eve unlock`, toggle in Settings > Modules). 11 modes (title click or Shift+wheel), segments (Current, Overall, past fights), class-coloured bars with rank, amount, per second and share, your row pinned at the bottom when scrolled away, spell breakdown on click, top-5 spells tooltip, report (self, party/raid/instance, guild, say), reset with confirm, show always / in combat / in a group. Blizzard's `DamageMeter` is ghosted (alpha 0, no mouse) and `damageMeterEnabled` is forced on so the game keeps tracking. In combat amounts are secret: bars and numbers still update, but share %, reports and breakdowns of units with a secret GUID wait for combat to end. To test: fight a mob, watch bars and the clock, switch modes and segments, click your row, `/reload` and check positions |
 | Unthemed audit | open | From source, not seen in game. Most visible first: (1) Blizzard damage meter, now replaced; (2) dropdown and right-click menus (Blizzard_Menu; `ScreenPass` skips "Menu"); (3) controls inside skinned windows: checkboxes, `InputBoxTemplate` edit boxes, `TabSystem` tabs, nested scroll bars; (4) group finder `LFGParentFrame` (Blizzard_GroupFinder_VanillaStyle); (5) `PetStableFrame`; (6) swing timer bars (background, pips); (7) CooldownViewer HUD and settings window; (8) currency tab side pane (`TokenFrame`); (9) flight map, battlefield map, PvP scoreboard, statistics; (10) raid frames (`CompactRaidFrameContainer`) |
+
+### Run 6 (2026-11-07): EveUI 0.4 ship systems
+
+All new, unverified in game; every file passes `luac5.1 -p` with no stray globals. New files need one
+full client restart. Then check in this order and run `/eve check` after each:
+
+| Step | What to check |
+|---|---|
+| Load | `/eve check` clean; Settings > Modules lists the new toggles; theme picker under Display |
+| Brackets | Shapes and colours by unit type, target corners and lock ticks, red ring when a mob is on you, cast bar still visible |
+| D-Scan | Radar blips for group (outdoors) and nameplates; HDG/N-UP; SCAN sweep and result list |
+| Star map | `/eve starmap`: zones and jump lines placed sensibly, pan/zoom, hover, click opens the world map |
+| Fitting, skills, wallet | Slots, item levels, gauges; XP/h after a few kills; gold graph after a vendor visit |
+| Killmails | Kill a mob: toast after combat, mail lists you with spells; die once for a loss mail |
+| Missions | Talk to a quest giver: agent panel beside the dialog; Accept / Complete / reward choice work with 0 blocked |
+| Broadcasts | In a group with another EveUI user: each kind arrives, toast, history, tag on brackets |
+| Voice | `/eve voice all`, then real triggers (low health out of combat, level up, quest complete) |
+| Comms | `/combatlog`, fight >20 s, restart the pilot service once: debrief on the page; tips in game after `/reload` |
+| Themes | `/eve theme amarr`: accent, borders and headers change everywhere |
+
+Known risks: line drawing (`CreateLine`) is new to EveUI; `UNIT_DIED`/`PARTY_KILL` delivery for
+killmails; whether quest dialog functions are protected; nameplate `GetCenter` secrecy in combat;
+the combat log format of this client has not been seen yet. Neocom icons for the new windows are
+best guesses (a green square means a wrong icon path).

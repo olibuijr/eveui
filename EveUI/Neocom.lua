@@ -116,6 +116,21 @@ ns.RegisterModule(function()
   Plain("World map", "Interface\\Icons\\INV_Misc_Map_01", function() ToggleWorldMap() end)
   Plain("EveUI settings", "Interface\\Icons\\Trade_Engineering", function() ns.ToggleSettings() end)
 
+  -- EveUI windows (their modules load after this one, so look them up on click).
+  local WINDOWS = {
+    { "starmap", "Star map", "Interface\\Icons\\INV_Misc_Map02", "ToggleStarMap" },
+    { "fitting", "Fitting", "Interface\\Icons\\INV_Gizmo_02", "ToggleFitting" },
+    { "skillqueue", "Skill queue", "Interface\\Icons\\INV_Misc_Book_11", "ToggleSkillQueue" },
+    { "wallet", "Wallet", "Interface\\Icons\\INV_Misc_Coin_01", "ToggleWallet" },
+    { "missions", "Missions", "Interface\\Icons\\INV_Misc_Note_02", "ToggleMissions" },
+    { "killmail", "Killmails", "Interface\\Icons\\Ability_Rogue_FeignDeath", "ToggleKillmails" },
+  }
+  for _, w in ipairs(WINDOWS) do
+    if ns.ModuleOn(w[1]) then
+      Plain(w[2], w[3], function() if ns[w[4]] then ns[w[4]]() end end)
+    end
+  end
+
   local seen = {}
   for _, item in ipairs(ITEMS) do
     local target = _G[item[1]]

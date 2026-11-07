@@ -7,11 +7,11 @@
 <style>
   :root {
     --bg: #05080a; --panel: #0a0f13; --line: #26333a; --text: #dbe3e8; --dim: #808c93;
-    --accent: #5bc7db; --hostile: #eb4538; --ok: #59e673;
+    --accent: #5bc7db; --hostile: #eb4538; --ok: #59e673; --warn: #f5b838;
   }
   * { box-sizing: border-box; }
   body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.45 "Barlow Semi Condensed", "Arial Narrow", system-ui, sans-serif; }
-  main { max-width: 760px; margin: 0 auto; padding: 16px; }
+  main { max-width: 980px; margin: 0 auto; padding: 16px; }
   header { display: flex; align-items: baseline; gap: 12px; border-bottom: 1px solid var(--line); padding-bottom: 8px; }
   header h1 { font-size: 15px; letter-spacing: .12em; margin: 0; color: var(--accent); }
   header span { color: var(--dim); font-size: 13px; }
@@ -32,11 +32,86 @@
   #answer { white-space: pre-wrap; margin-top: 10px; }
   .err { color: var(--hostile); }
   .muted { color: var(--dim); }
+  h3 { font-size: 11px; letter-spacing: .12em; color: var(--dim); margin: 14px 0 6px; font-weight: 600; }
+  h2 .live { color: var(--hostile); margin-left: 8px; }
+  h2 .live::before { content: "● "; }
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 8px; }
+  .tile { border: 1px solid var(--line); background: #0f161b; padding: 6px 10px; }
+  .tile b { display: block; font-size: 22px; font-weight: 600; color: #fff; font-variant-numeric: tabular-nums; }
+  .tile span { font-size: 11px; letter-spacing: .1em; color: var(--dim); }
+  svg { display: block; width: 100%; height: auto; }
+  svg text { fill: var(--dim); font: 10px "Barlow Semi Condensed", "Arial Narrow", sans-serif; }
+  .legend { font-size: 12px; color: var(--dim); display: flex; gap: 14px; margin-top: 4px; }
+  .legend i { display: inline-block; width: 10px; height: 2px; vertical-align: middle; margin-right: 5px; }
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  @media (max-width: 700px) { .cols { grid-template-columns: 1fr; } }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }
+  td, th { padding: 3px 6px; text-align: right; white-space: nowrap; }
+  th { color: var(--dim); font-weight: 600; font-size: 11px; letter-spacing: .08em; }
+  td:first-child, th:first-child { text-align: left; white-space: normal; position: relative; }
+  td .bar { position: absolute; left: 0; bottom: 1px; height: 2px; background: var(--accent); opacity: .7; }
+  tr.click { cursor: pointer; }
+  tr.click:hover td { color: #fff; }
+  tr.sel td { color: var(--accent); }
+  .tips li { padding: 4px 0; }
+  .death { border-left: 2px solid var(--hostile); padding-left: 10px; margin: 6px 0; font-size: 13px; }
+  .death .ev { color: var(--dim); }
+  .death .ev b { color: var(--text); font-weight: 500; }
+  .km { border: 1px solid var(--line); background: #0f161b; padding: 8px 10px; margin-top: 8px; font-size: 13px; }
+  .km .top { display: flex; justify-content: space-between; gap: 8px; }
+  .km .kind { letter-spacing: .1em; font-size: 11px; font-weight: 600; }
+  .km .kind.kill { color: var(--ok); } .km .kind.death { color: var(--hostile); }
+  .brief { border-left: 2px solid var(--accent); padding-left: 10px; margin: 10px 0; }
+  .brief .ag { color: var(--accent); font-size: 12px; letter-spacing: .06em; }
+  .brief .ob { font-size: 13px; } .brief .tp { font-size: 13px; color: var(--warn); }
+  .small { font-size: 12px; }
 </style>
 </head>
 <body>
 <main>
   <header><h1>EVEUI PILOT</h1><span id="status">connecting…</span></header>
+
+  <section>
+    <h2>COMBAT<span id="clive"></span> <span id="cname" class="muted"></span></h2>
+    <div id="cstatus" class="muted small">Waiting for the combat log: type /combatlog in game.</div>
+    <div class="tiles" style="margin-top:8px">
+      <div class="tile"><span>DURATION</span><b id="t-dur">–</b></div>
+      <div class="tile"><span>DPS</span><b id="t-dps">–</b></div>
+      <div class="tile"><span>HPS</span><b id="t-hps">–</b></div>
+      <div class="tile"><span>DAMAGE TAKEN/S</span><b id="t-dtps">–</b></div>
+      <div class="tile"><span>DAMAGE</span><b id="t-dmg">–</b></div>
+      <div class="tile"><span>IDLE</span><b id="t-idle">–</b></div>
+    </div>
+    <h3>DPS OVER TIME (5 S AVERAGE)</h3>
+    <svg id="graph" viewBox="0 0 900 170" preserveAspectRatio="none"></svg>
+    <div class="legend"><span><i style="background:var(--accent)"></i>damage</span><span><i style="background:var(--ok)"></i>healing</span><span><i style="background:var(--hostile)"></i>taken</span></div>
+    <div class="cols">
+      <div><h3>DAMAGE BY SPELL</h3><table id="spells"></table></div>
+      <div><h3>DAMAGE TAKEN BY SOURCE</h3><table id="taken"></table>
+        <h3>DOT / HOT UPTIME</h3><table id="uptime"></table>
+        <h3>INTERRUPTS</h3><div id="ints" class="small muted"></div></div>
+    </div>
+    <h3>ROTATION</h3>
+    <svg id="rot" viewBox="0 0 900 40"></svg>
+    <h3>DEBRIEF</h3>
+    <div id="debrief" class="muted small">Fights over 20 s get a debrief from Claude when they end.</div>
+    <div id="deaths"></div>
+  </section>
+
+  <section>
+    <h2>ENGAGEMENTS <button id="follow" style="float:right;padding:2px 8px;font-size:12px">Follow live</button></h2>
+    <table id="fights"></table>
+  </section>
+
+  <section>
+    <h2>KILLMAILS</h2>
+    <div id="kms" class="muted small">No killmails yet (they arrive with the next /reload).</div>
+  </section>
+
+  <section>
+    <h2>MISSION BRIEFINGS</h2>
+    <div id="briefs" class="muted small">No briefings yet.</div>
+  </section>
 
   <section>
     <h2>ASK</h2>
@@ -115,6 +190,174 @@ $("planf").addEventListener("submit", async (e) => {
 
 refresh();
 setInterval(refresh, 5000);
+
+// Combat ------------------------------------------------------------------------
+const num = (v) => (v == null ? "–" : Math.round(v).toLocaleString());
+const clock = (s) => { s = Math.max(0, Math.round(s || 0)); return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0"); };
+let sel = null; // null follows the live fight, else a fight id
+
+function smooth(a, w) {
+  return a.map((_, i) => { let s = 0, n = 0; for (let j = Math.max(0, i - w + 1); j <= i; j++) { s += a[j]; n++; } return s / n; });
+}
+
+function graph(f) {
+  const W = 900, H = 170, L = 44, B = 18, T = 6;
+  const tl = f.timeline || { dps: [], hps: [], taken: [] };
+  const series = [[smooth(tl.dps, 5), "var(--accent)"], [smooth(tl.hps, 5), "var(--ok)"], [smooth(tl.taken, 5), "var(--hostile)"]];
+  const n = Math.max(2, tl.dps.length);
+  const max = Math.max(10, ...series.flatMap(([a]) => a)) * 1.1;
+  const x = (i) => L + (i / (n - 1)) * (W - L - 4), y = (v) => T + (1 - v / max) * (H - T - B);
+  let g = "";
+  for (let k = 0; k <= 4; k++) {
+    const v = (max / 4) * k;
+    g += `<line x1="${L}" x2="${W}" y1="${y(v)}" y2="${y(v)}" stroke="#26333a" stroke-width="1"/><text x="${L - 6}" y="${y(v) + 3}" text-anchor="end">${Math.round(v)}</text>`;
+  }
+  const step = Math.max(5, Math.ceil(n / 10 / 5) * 5);
+  for (let i = 0; i < n; i += step) g += `<text x="${x(i)}" y="${H - 4}" text-anchor="middle">${clock(i)}</text>`;
+  for (const [a, c] of series) {
+    if (!a.some((v) => v > 0)) continue;
+    g += `<polyline fill="none" stroke="${c}" stroke-width="2" points="${a.map((v, i) => x(i).toFixed(1) + "," + y(v).toFixed(1)).join(" ")}"/>`;
+  }
+  for (const d of f.deathList || []) g += `<line x1="${x(d.t)}" x2="${x(d.t)}" y1="${T}" y2="${H - B}" stroke="var(--hostile)" stroke-dasharray="3 3"/>`;
+  $("graph").innerHTML = g;
+}
+
+function rotation(f) {
+  const casts = f.castList || [];
+  const counts = {};
+  casts.forEach((c) => (counts[c.name] = (counts[c.name] || 0) + 1));
+  const names = Object.keys(counts).sort((a, b) => counts[b] - counts[a]).slice(0, 8);
+  const W = 900, L = 120, R = 16, H = Math.max(1, names.length) * 18 + 16, dur = Math.max(1, f.duration || 1);
+  const x = (t) => L + (t / dur) * (W - L - 4);
+  let g = "";
+  names.forEach((n, i) => {
+    const yy = i * 18 + 4;
+    g += `<text x="0" y="${yy + 11}">${esc(n.slice(0, 22))} (${counts[n]})</text><line x1="${L}" x2="${W}" y1="${yy + 8}" y2="${yy + 8}" stroke="#18232a"/>`;
+    casts.filter((c) => c.name === n).forEach((c) => (g += `<rect x="${x(c.t) - 1.5}" y="${yy + 2}" width="3" height="12" fill="var(--accent)"><title>${esc(n)} @ ${c.t}s</title></rect>`));
+  });
+  if (!names.length) g = `<text x="0" y="14">No casts recorded.</text>`;
+  $("rot").setAttribute("viewBox", `0 0 ${W} ${H}`);
+  $("rot").innerHTML = g;
+}
+
+function rows(list, cols, total) {
+  if (!list.length) return `<tr><td class="muted">None.</td></tr>`;
+  return `<tr>${cols.map((c) => `<th>${c[0]}</th>`).join("")}</tr>` + list.map((r) =>
+    `<tr>${cols.map((c, i) => `<td>${i === 0 ? `<span class="bar" style="width:${total ? (r.amount / total) * 100 : 0}%"></span>` : ""}${c[1](r)}</td>`).join("")}</tr>`).join("");
+}
+
+function showFight(f, live) {
+  $("clive").innerHTML = live ? '<span class="live">LIVE</span>' : "";
+  if (!f) return;
+  $("cname").textContent = f.name + (f.outcome === "death" ? " · died" : "");
+  $("t-dur").textContent = clock(f.duration);
+  $("t-dps").textContent = num(f.dps);
+  $("t-hps").textContent = num(f.hps);
+  $("t-dtps").textContent = num(f.dtps);
+  $("t-dmg").textContent = num(f.damage);
+  $("t-idle").textContent = f.idle != null ? f.idle + " s" : "–";
+  graph(f);
+  rotation(f);
+  const dmg = f.damage || 0;
+  $("spells").innerHTML = rows((f.spells || []).slice(0, 12), [
+    ["SPELL", (r) => esc(r.name) + (r.pet ? ' <span class="muted">(pet)</span>' : "")],
+    ["DAMAGE", (r) => num(r.amount)], ["%", (r) => (dmg ? ((r.amount / dmg) * 100).toFixed(1) : "0")],
+    ["HITS", (r) => r.hits], ["CRIT", (r) => (r.hits ? Math.round((r.crits / r.hits) * 100) + "%" : "–")],
+    ["CASTS", (r) => r.casts || "–"]], dmg);
+  $("taken").innerHTML = rows((f.takenBy || []).slice(0, 8), [
+    ["SOURCE", (r) => esc(r.source)], ["DAMAGE", (r) => num(r.amount)], ["HITS", (r) => r.hits]], f.taken || 0);
+  $("uptime").innerHTML = rows((f.uptime || []).map((u) => ({ ...u, amount: u.uptime })), [
+    ["SPELL", (r) => esc(r.name) + ` <span class="muted">${r.kind === "DEBUFF" ? "dot" : "hot"}</span>`],
+    ["UPTIME", (r) => r.uptime + "%"], ["APPLIED", (r) => r.applications]], 100);
+  const ec = f.enemyCasts || { completed: 0, list: [] };
+  $("ints").innerHTML = (f.interruptList || []).map((i) => `${i.t}s ${esc(i.spell)} → ${esc(i.interrupted)} (${esc(i.target)})`).join("<br>")
+    + ((f.interruptList || []).length ? "<br>" : "No interrupts. ")
+    + (ec.completed ? `<span style="color:var(--warn)">${ec.completed} enemy cast${ec.completed > 1 ? "s" : ""} went through: ${ec.list.map((c) => esc(c.name) + " @" + c.t + "s").join(", ")}</span>` : "");
+  const d = f.debrief;
+  if (d && d.tips) {
+    $("debrief").className = "";
+    $("debrief").innerHTML = `<div style="color:var(--accent)">${esc(d.headline)}</div><ul class="tips">${d.tips.map((t) => `<li>${esc(t)}</li>`).join("")}</ul>`;
+  } else {
+    $("debrief").className = "muted small";
+    $("debrief").innerHTML = f.active ? "Debrief follows when the fight ends." : (f.duration >= 20
+      ? `No debrief yet. <button onclick="askDebrief(${f.id})" style="padding:2px 8px;font-size:12px">Debrief now</button>`
+      : "Short fight: no debrief.");
+  }
+  $("deaths").innerHTML = (f.deathList || []).map((dd) => `<h3>DEATH AT ${clock(dd.t)}${dd.killer ? " · KILLED BY " + esc(dd.killer).toUpperCase() : ""}</h3><div class="death">` +
+    dd.events.map((e) => `<div class="ev">${e.t}s <b>${esc(e.source)}</b> ${esc(e.spell)} ` +
+      (e.kind === "heal" ? `<span style="color:var(--ok)">+${num(e.amount)}</span>` : e.kind === "miss" ? esc(e.miss) : `<span style="color:var(--hostile)">-${num(e.amount)}${e.crit ? " crit" : ""}</span>`) +
+      (e.hp != null ? ` · ${e.hp}% hp` : "") + "</div>").join("") + "</div>").join("");
+}
+
+async function askDebrief(id) {
+  const r = await fetch(`combat/fight/${id}/debrief`, { method: "POST" }).then((r) => r.json());
+  $("debrief").textContent = r.error || "Asking Claude…";
+}
+
+async function combat() {
+  try {
+    const live = await fetch("combat/live").then((r) => r.json());
+    const bits = [];
+    if (live.player) bits.push(live.player.split("-")[0]);
+    bits.push(live.file ? "log " + live.file.split("/").pop() : "no combat log yet: /combatlog in game");
+    if (live.debriefing) bits.push("debriefing fight " + live.debriefing + "…");
+    $("cstatus").innerHTML = esc(bits.join(" · ")) + (live.error ? ' <span class="err">' + esc(live.error) + "</span>" : "");
+    if (sel === null) showFight(live.fight, live.active);
+  } catch (e) { $("cstatus").innerHTML = '<span class="err">service unreachable</span>'; }
+}
+
+async function fights() {
+  try {
+    const j = await fetch("combat/fights").then((r) => r.json());
+    $("fights").innerHTML = j.fights.length ? `<tr><th>ENGAGEMENT</th><th>TIME</th><th>DUR</th><th>DPS</th><th>HPS</th><th>TAKEN</th><th>KILLS</th><th></th></tr>` +
+      j.fights.map((f) => `<tr class="click${sel === f.id ? " sel" : ""}" data-id="${f.id}"><td>${esc(f.name)}${f.active ? ' <span class="live" style="color:var(--hostile)">LIVE</span>' : ""}</td>` +
+        `<td>${new Date(f.start * 1000).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</td><td>${clock(f.duration)}</td><td>${num(f.dps)}</td><td>${num(f.hps)}</td>` +
+        `<td>${num(f.taken)}</td><td>${f.kills}</td><td>${f.deaths ? '<span class="err">died</span>' : f.debrief ? '<span style="color:var(--accent)">debrief</span>' : ""}</td></tr>`).join("")
+      : `<tr><td class="muted">No fights yet.</td></tr>`;
+  } catch (e) {}
+}
+
+$("fights").addEventListener("click", async (e) => {
+  const tr = e.target.closest("tr[data-id]");
+  if (!tr) return;
+  sel = Number(tr.dataset.id);
+  const f = await fetch("combat/fight/" + sel).then((r) => r.json());
+  if (!f.error) showFight(f, !!f.active);
+  fights();
+});
+$("follow").addEventListener("click", () => { sel = null; combat(); fights(); });
+
+function kmCard(k) {
+  const dmg = (k.damage || []).slice().sort((a, b) => (b.amount || 0) - (a.amount || 0));
+  const total = dmg.reduce((s, d) => s + (d.amount || 0), 0);
+  const v = k.victim || {};
+  return `<div class="km"><div class="top"><span><span class="kind ${esc(k.kind)}">${k.kind === "death" ? "LOSS" : "KILL"}</span> ` +
+    `<b>${esc(v.name)}</b> <span class="muted">lvl ${esc(v.level)} ${esc(v.class || "")}</span></span>` +
+    `<span class="muted">${esc(k.zone || "")} · ${k.time ? new Date(k.time * 1000).toLocaleString() : ""}${k.duration ? " · " + clock(k.duration) : ""}</span></div>` +
+    (k.killer ? `<div class="muted">Final blow: <b style="color:var(--text)">${esc(k.killer.name)}</b> ${esc(k.killer.class || "")}</div>` : "") +
+    `<table>${dmg.map((d) => `<tr><td><span class="bar" style="width:${total ? (d.amount / total) * 100 : 0}%"></span>${esc(d.name)} <span class="muted">${esc(d.class || "")}</span>` +
+      `<div class="muted" style="font-size:11px">${(d.spells || []).slice(0, 4).map((s) => esc(s.name) + " " + num(s.amount)).join(" · ")}</div></td>` +
+      `<td>${num(d.amount)}</td><td>${total ? Math.round((d.amount / total) * 100) : 0}%</td></tr>`).join("")}</table></div>`;
+}
+
+async function slow() {
+  try {
+    const km = await fetch("killmails").then((r) => r.json());
+    if (km.killmails.length) { $("kms").className = ""; $("kms").innerHTML = km.killmails.slice(0, 15).map(kmCard).join(""); }
+    const b = await fetch("briefings").then((r) => r.json());
+    const ids = Object.keys(b.briefings || {});
+    if (ids.length) {
+      $("briefs").className = "";
+      $("briefs").innerHTML = ids.map((id) => { const x = b.briefings[id]; return `<div class="brief"><div class="ag">${esc(x.agent).toUpperCase()}</div>` +
+        `<div>${esc(x.text)}</div><div class="ob">Objective: ${esc(x.objective)}</div><div class="tp">${esc(x.tip)}</div></div>`; }).join("");
+    } else if (b.working) $("briefs").textContent = "Writing briefings…";
+  } catch (e) {}
+}
+
+combat(); fights(); slow();
+setInterval(() => { if (sel === null) combat(); }, 1000);
+setInterval(fights, 4000);
+setInterval(slow, 15000);
 </script>
 </body>
 </html>

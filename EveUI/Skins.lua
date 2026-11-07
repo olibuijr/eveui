@@ -1252,7 +1252,7 @@ SkinPlateCast = function(cb)
   -- values can be secret for other units; then the figure stays hidden.
   local tm = cb:CreateFontString(nil, "OVERLAY")
   ns.SetFont(tm, 9, "OUTLINE", cb)
-  tm:SetTextColor(0.36, 0.78, 0.86)
+  tm:SetTextColor(C.accent[1], C.accent[2], C.accent[3])
   tm:SetPoint("TOPRIGHT", cb, "BOTTOMRIGHT", 0, -2)
   cb.eveTime = tm
   -- Fill direction: casts fill left to right, channels drain. Undo any

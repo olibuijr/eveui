@@ -1,4 +1,4 @@
--- Print EveUIDB.pilotState from an EveUI SavedVariables file as JSON.
+-- Print EveUIDB.pilotState (and killmails) from an EveUI SavedVariables file as JSON.
 -- Usage: lua5.1 sv2json.lua <EveUI.lua>
 local path = arg[1]
 local env = {}
@@ -59,5 +59,5 @@ local function enc(v, out)
 end
 
 local out = {}
-enc({ state = db.pilotState, marks = db.pilotMarks, mode = db.pilotMode }, out)
+enc({ state = db.pilotState, marks = db.pilotMarks, mode = db.pilotMode, killmails = db.killmails }, out)
 io.write(table.concat(out))

@@ -1,13 +1,14 @@
 ## Interface: 16001
 ## Title: EveUI
-## Notes: Sci-fi interface inspired by EVE Online: unit frames and cast bars (traditional or ring HUD), module racks, overview, fleet, Neocom, quest autopilot, combat text and a full reskin.
+## Notes: Sci-fi interface inspired by EVE Online: unit frames and cast bars (traditional or ring HUD), module racks, overview, fleet, Neocom, quest autopilot, combat text, damage meter, brackets, D-Scan, star map, fitting, skill queue, wallet, killmails, missions, fleet broadcasts, voice alerts, combat coach, faction themes and a full reskin.
 ## Author: olibuijr
-## Version: 0.3.0
+## Version: 0.4.0
 ## X-License: MIT
 ## X-Website: https://github.com/olibuijr/eveui
 ## SavedVariables: EveUIDB
 
 Core.lua
+Themes.lua
 Arc.lua
 Castbar.lua
 HUD.lua
@@ -16,11 +17,24 @@ Lock.lua
 Party.lua
 Overview.lua
 DamageMeter.lua
+Killmail.lua
+Fitting.lua
+SkillQueue.lua
+Wallet.lua
+Broadcasts.lua
 Location.lua
 Neocom.lua
 SCT.lua
 Skins.lua
+Brackets.lua
 Extras.lua
+Briefings.lua
+Missions.lua
 Guide.lua
 Pilot.lua
+StarMap.lua
+DScan.lua
+Voice.lua
+Comms.lua
+CommsPanel.lua
 Debug.lua

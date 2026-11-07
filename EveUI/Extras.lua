@@ -892,6 +892,28 @@ local function BuildSettings()
     function(v) EveUIDB.opacity = math.floor(v * 20 + 0.5) / 20; ns.ApplyOpacity() end, true)
   y = y + 48
 
+  -- Faction theme: cycles through ns.THEMES; applies after a reload.
+  if ns.THEMES then
+    local tl = ns.Text(f, 11, C.text, "LEFT")
+    tl:SetPoint("TOPLEFT", 14, -(y + 6))
+    tl:SetText("Faction theme")
+    local pick = EveUIDB.theme or "caldari"
+    local function Label()
+      for _, t in ipairs(ns.THEMES) do if t.key == pick then return t.label end end
+      return "Caldari"
+    end
+    local tb
+    tb = SButton(f, Label(), 150, function()
+      local idx = 1
+      for i, t in ipairs(ns.THEMES) do if t.key == pick then idx = i end end
+      pick = ns.THEMES[idx % #ns.THEMES + 1].key
+      EveUIDB.theme = pick ~= "caldari" and pick or nil
+      tb:SetLabel(Label() .. ((pick ~= (ns.appliedTheme or "caldari")) and "  (reload)" or ""))
+    end)
+    tb:SetPoint("TOPRIGHT", -14, -y)
+    y = y + 34
+  end
+
   SHeader(f, "Modules", y)
   y = y + 18
   local reload
@@ -910,6 +932,17 @@ local function BuildSettings()
       function(on) EveUIDB.off.locks = (not on) or nil; EveUIDB.off.unitframes = (not on) or nil; Changed() end },
     { "Fleet", Off("fleet") },
     { "Damage meter", Off("meter") },
+    { "Killmails", Off("killmail") },
+    { "Nameplate brackets", Off("brackets") },
+    { "D-Scan radar", Off("dscan") },
+    { "Star map", Off("starmap") },
+    { "Fitting", Off("fitting") },
+    { "Skill queue", Off("skillqueue") },
+    { "Wallet", Off("wallet") },
+    { "Missions", Off("missions") },
+    { "Fleet broadcasts", Off("broadcasts") },
+    { "Ship voice alerts", Off("voice") },
+    { "Fleet comms", Off("comms") },
     { "Combat text", Off("sct") },
     { "Hide Blizzard unit frames", function() return EveUIDB.hideBlizzard end,
       function(on) EveUIDB.hideBlizzard = on; Changed() end },
