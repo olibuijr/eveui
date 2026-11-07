@@ -15,6 +15,7 @@ ActionBars.lua
 Lock.lua
 Party.lua
 Overview.lua
+DamageMeter.lua
 Location.lua
 Neocom.lua
 SCT.lua

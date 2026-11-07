@@ -37,6 +37,11 @@ the cast fills a segmented ring like an EVE module cycle.
   cooldowns, range and proc highlights.
 - **Overview**: nearby units, with distance and type, click to target.
 - **Fleet**: party frames with range fade.
+- **Damage meter**: damage, DPS, healing, HPS, absorbs, interrupts, dispels, damage taken, avoidable
+  damage, deaths and enemy damage taken for the current fight, overall or any past fight. Click a row
+  for its spell breakdown (right-click to go back), hover for the top spells, Shift+wheel to change
+  mode, report to chat, reset. Right-click the panel to show it always, in combat or in a group. It
+  reads the game's own tracking (`C_DamageMeter`) and hides Blizzard's meter window.
 - **Location**: square minimap with coordinates, FPS and latency, durability, gold and clock.
 - **Neocom**: a sidebar on the left or right edge with the game menus, bags, map and settings. It
   works in combat.
@@ -139,6 +144,7 @@ EveUI/          the addon
   HUD.lua         ship HUD (ring style)
   Lock.lua        unit frames: ring "locked targets" and traditional frames and cast bars
   ActionBars.lua  module racks
+  DamageMeter.lua damage meter over C_DamageMeter
   Overview.lua, Party.lua, Location.lua, Neocom.lua, SCT.lua
   Skins.lua, Extras.lua  reskin of Blizzard windows, settings window
   Pilot.lua       quest autopilot

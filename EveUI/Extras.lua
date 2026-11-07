@@ -639,7 +639,7 @@ local function Bosses()
     for _, r in ipairs(f.rows) do
       local u = r:GetAttribute("unit") or r.unit
       if UnitExists(u) then
-        r.name:SetText(UnitName(u))
+        ns.SetUnitName(r.name, u)
         local c = ns.ReactionColor(u)
         r.hp:SetStatusBarColor(c[1], c[2], c[3])
         pcall(function() r.hp:SetValue(ns.HealthPct100(u)) end)
@@ -909,6 +909,7 @@ local function BuildSettings()
     { "Unit frames", function() return not (EveUIDB.off.locks or EveUIDB.off.unitframes) end,
       function(on) EveUIDB.off.locks = (not on) or nil; EveUIDB.off.unitframes = (not on) or nil; Changed() end },
     { "Fleet", Off("fleet") },
+    { "Damage meter", Off("meter") },
     { "Combat text", Off("sct") },
     { "Hide Blizzard unit frames", function() return EveUIDB.hideBlizzard end,
       function(on) EveUIDB.hideBlizzard = on; Changed() end },
