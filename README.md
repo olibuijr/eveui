@@ -5,6 +5,8 @@ steel borders, cyan accents and a narrow technical typeface. It replaces the uni
 action bars, minimap, chat, tooltips and most windows, and adds a quest autopilot that can plan your
 route with Claude.
 
+![EveUI in Elwynn Forest: unit frames, minimap panel, objectives list, damage meter, D-scan, overview and the quest autopilot card](docs/screenshot.jpg)
+
 Built for the **WoW Forever** client (interface `16001`), including its hidden combat values ("secret
 values").
 
@@ -186,6 +188,7 @@ EveUI/          the addon
   Guide.lua       AI route, written by the pilot service
   Debug.lua       /eve check, traces and snapshots
 pilot/          optional route-planning service (Python, Claude Agent SDK)
+docs/           README screenshot
 TESTING.md      in-game test checklist and results
 ```
 
